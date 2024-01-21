@@ -4,37 +4,11 @@ const Recipe = require('../models/Recipe');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-// Import controllers
 const mongoose = require('mongoose');
 const recipeController = require('../controllers/recipeController');
 const userController = require('../controllers/userController');
 
-//router.post('/users/register', async (req, res) => {
-//    const { username, password } = req.body;
-//    const user = new User({ username, password });
-//    try {
-//        await user.sav e();
-//        // User registered successfully, redirect to login page
-//        res.redirect('/users/login');
-//    } catch (err) {
-//        // Handle error
-//        console.log(err);
-//        res.redirect('/users/register');
-//    }
-//});
 
-//router.route('/login')
-//    .get((req, res) => res.render('users/login')) // Show login page
-//    .post(userController.login); // Handle login
-
-// Recipe routes
-//router.route('/recipes')
-//    .get((req, res) => {
-//        // Assuming `user` is available in `req.user`
-//        const user = req.user;
-
-//        res.render('recipes/index', { user: user });
-//    });
 router.get('/recipe/new', (req, res) => {
     const token = req.cookies.token;
     if (token) {
@@ -100,10 +74,86 @@ router.get('/recipes', (req, res) => {
         res.render('recipes/index', { user, recipes });
     });
 });
-//router.route('/recipe/:id')
-//    .get((req, res) => res.render('recipes/show')) // Show specific recipe
-//    .put((req, res) => res.render('recipes/edit')) // Show edit recipe form
-//    .delete(recipeController.deleteRecipe);
 
-    
+
+router.route('/recipes/:id')
+    .get((req, res) => {
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(403).send({ auth: false, message: 'No token provided.' });
+        }
+        jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+            if (err) {
+                return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+            }
+            const user = await User.findById(decodedToken.id);
+            Recipe.findById(req.params.id)
+                .then(foundRecipe => {
+                    res.render('recipes/show', { recipe: foundRecipe, user: user });
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.send("An error occurred");
+                });
+        });
+    })
+router.get('/recipes/:id/edit', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = await User.findById(decodedToken.id);
+        Recipe.findById(req.params.id)
+            .then(foundRecipe => {
+                
+                res.render('recipes/edit', { recipe: foundRecipe, user: user });
+            })
+            .catch(err => {
+                console.log(err);
+                res.send("An error occurred");
+            });
+    });
+});
+router.post('/recipes/:id/edit', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = await User.findById(decodedToken.id);
+        Recipe.findById(req.params.id)
+            .then(async foundRecipe => {
+                foundRecipe.title = req.body.title;
+                foundRecipe.ingredients = req.body.ingredients;
+                foundRecipe.instructions = req.body.instructions;
+                await foundRecipe.save();
+                res.redirect(`/recipes/${foundRecipe.id}`);
+            })
+            .catch(err => {
+                console.log(err);
+                res.send("An error occurred");
+            });
+    });
+});
+router.delete('/recipes/:id', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', async (err, user) => {
+            if (err) {
+                return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+            }
+            req.user = user;
+            await recipeController.deleteRecipe(req, res);
+        });
+    } else {
+        res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+});
 module.exports = router;
