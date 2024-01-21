@@ -5,18 +5,25 @@ const router = express.Router();
 const recipeController = require('../controllers/recipeController');
 const userController = require('../controllers/userController');
 
-// Define routes
-router.post('/recipe', recipeController.createRecipe);
-router.get('/recipes', recipeController.getAllRecipes);
-router.get('/recipe/:id', recipeController.getRecipe);
-router.put('/recipe/:id', recipeController.updateRecipe);
-router.delete('/recipe/:id', recipeController.deleteRecipe);
+// User routes
+router.route('/register')
+    .get((req, res) => res.render('users/register')) // Show register page
+    .post(userController.register); // Handle registration
+   
+router.route('/login')
+    .get((req, res) => res.render('users/login')) // Show login page
+    .post(userController.login); // Handle login
 
+// Recipe routes
+router.route('/recipes')
+    .post(recipeController.createRecipe)
+    .get((req, res) => res.render('recipes/index')); // Show all recipes
 
-router.get('/register', userController.showRegister); // Add this line
-router.get('/login', userController.showLogin); // Add this line
-
-router.post('/register', userController.register);
-router.post('/login', userController.login);
-
+router.route('/recipe/new')
+    .get((req, res) => res.render('recipes/new')); // Show new recipe form
+    
+router.route('/recipe/:id')
+    .get((req, res) => res.render('recipes/show')) // Show specific recipe
+    .put((req, res) => res.render('recipes/edit')) // Show edit recipe form
+    .delete(recipeController.deleteRecipe);
 module.exports = router;

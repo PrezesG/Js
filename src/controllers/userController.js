@@ -1,11 +1,10 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const session = require('express-session');
 
 
-exports.showRegister = (req, res) => {
-    res.sendFile(path.join(__dirname, '../../views/users/register.html'));
-  };
+
 exports.register = async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -18,9 +17,7 @@ exports.register = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
-exports.showLogin = (req, res) => {
-    res.sendFile(path.join(__dirname, '../../views/users/login.html'));
-  };
+
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -37,6 +34,6 @@ exports.login = async (req, res) => {
       data: user
     });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.redirect(page);
   }
 };

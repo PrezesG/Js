@@ -1,17 +1,20 @@
 const Recipe = require('../models/Recipe');
 
 exports.createRecipe = async (req, res) => {
-  try {
-    req.body.user = req.user.id;
-    const recipe = await Recipe.create(req.body);
-    res.status(201).json({
-      success: true,
-      data: recipe
-    });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+    try {
+      if (!req.user || !req.body) {
+        throw new Error('Invalid request');
+      }
+      req.body.user = req.user.id;
+      const recipe = await Recipe.create(req.body);
+      // Redirect to 'recipes/index' after successful creation
+      res.redirect('/recipes');
+    } 
+    catch (err) {
+        res.redirect('/recipes');
+    }
+  };
+  
 
 exports.getAllRecipes = async (req, res) => {
   try {
