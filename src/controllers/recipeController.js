@@ -16,16 +16,13 @@ exports.createRecipe = async (req, res) => {
   };
   
 
-exports.getAllRecipes = async (req, res) => {
-  try {
-    const recipes = await Recipe.find({ user: req.user.id });
-    res.status(200).json({
-      success: true,
-      data: recipes
-    });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
+  const getAllRecipes = async (req, res) => {
+    try {
+        const recipes = await Recipe.find();
+        res.render('recipes', { recipes: recipes });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 };
 
 exports.getRecipe = async (req, res) => {

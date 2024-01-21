@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Home Page</title>
+    <title>All Recipes</title>
 </head>
 <body>
     <%- include('../layout') %>
-    <h1>Welcome to our website!</h1>
-    <nav>
-        <a href="/login">Login</a> |
-        <a href="/register">Register</a>
-    </nav>
+    <h1>All Recipes</h1>
+    <ul>
+        <% if (user) { %>
+            Hello, <%= user.username %>!
+        <% } else { %>
+            Hello!
+        <% } %>
+    </ul>
 </body>
 </html>
