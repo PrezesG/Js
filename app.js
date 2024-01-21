@@ -17,10 +17,13 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: false }));
 app.use('/', indexRoutes);
 
-
+app.get('/', function (req, res) {
+    res.render('HomePage'); // render HomePage.ejs
+});
 app.get('/users/login', (req, res) => {
     res.render('users/login');
 })
+
 
 app.post('/users/login', async (req, res) => {
     try {
