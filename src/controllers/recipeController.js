@@ -28,19 +28,18 @@ exports.createRecipe = async (req, res) => {
 };
 
 exports.getRecipe = async (req, res) => {
-  try {
-    const recipe = await Recipe.findOne({ _id: req.params.id, user: req.user.id });
-    if (!recipe) {
-      return res.status(404).json({ success: false, error: 'No recipe found' });
+    try {
+        const recipe = await Recipe.findOne({ _id: req.params.id, user: req.user.id });
+        if (!recipe) {
+            return res.status(404).json({ success: false, error: 'No recipe found' });
+        }
+        // Render the 'show' view with the found recipe
+        res.render('recipes/show', { recipe: recipe });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
-    res.status(200).json({
-      success: true,
-      data: recipe
-    });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
 };
+
 
 exports.updateRecipe = async (req, res) => {
   try {

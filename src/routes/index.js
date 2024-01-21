@@ -105,5 +105,32 @@ router.get('/recipes', (req, res) => {
 //    .put((req, res) => res.render('recipes/edit')) // Show edit recipe form
 //    .delete(recipeController.deleteRecipe);
 
+
+router.route('/recipes/:id')
+    .get((req, res) => {
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(403).send({ auth: false, message: 'No token provided.' });
+        }
+        jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+            if (err) {
+                return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+            }
+            const user = await User.findById(decodedToken.id);
+            Recipe.findById(req.params.id)
+                .then(foundRecipe => {
+                    // Render the 'show' view with the found recipe and user
+                    res.render('recipes/show', { recipe: foundRecipe, user: user });
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.send("An error occurred");
+                });
+        });
+    })
+    .delete(recipeController.deleteRecipe);
+
+
+
     
 module.exports = router;
