@@ -36,6 +36,7 @@
         height: 40px;
         text-align: center;
         line-height: 40px;
+        border: none;
     }
     .recipe-box button {
         border: none;
@@ -57,9 +58,9 @@
             <a href="/recipes/<%= recipe._id %>">Show</a>
             <% if (user) { %>
                 <a href="/recipes/<%= recipe._id %>/edit">Edit</a>
-    <form action="/recipes/<%= recipe._id %>?_method=DELETE" method="POST">
+    <form action="/recipes/<%= recipe._id %>?_method=DELETE" method="POST" style="display: inline-block;">
         <input type="hidden" name="_method" value="DELETE">
-        <input type="submit" value="Delete">
+        <button type="submit" style="background-color: #f44336; color: white;">Delete</button>
     </form>
             <% } %>
         </div>
