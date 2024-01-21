@@ -6,10 +6,10 @@ exports.createRecipe = async (req, res) => {
             throw new Error('Invalid request');
         }
         const { title, ingredients, instructions } = req.body;
-        const user = req.user._id; // Assuming you have a middleware that sets req.user
+        const user = req.user._id;
         const recipe = new Recipe({ title, ingredients, instructions, user });
         await recipe.save();
-        // Recipe created successfully
+        
         res.redirect('/recipes');
     } catch (err) {
         console.log(err);
@@ -33,8 +33,8 @@ exports.getRecipe = async (req, res) => {
         if (!recipe) {
             return res.status(404).json({ success: false, error: 'No recipe found' });
         }
-        // Render the 'show' view with the found recipe
-        res.render('recipes/show', { recipe: recipe });
+
+        res.render('recipes/edit', { recipe: recipe });
     } catch (err) {
         res.status(400).json({ success: false, error: err.message });
     }
@@ -61,17 +61,20 @@ exports.updateRecipe = async (req, res) => {
 };
 
 exports.deleteRecipe = async (req, res) => {
-  try {
-    const recipe = await Recipe.findOne({ _id: req.params.id, user: req.user.id });
-    if (!recipe) {
-      return res.status(404).json({ success: false, error: 'No recipe found' });
+    if (!req.user) {
+        return res.status(401).json({ success: false, error: 'Not authenticated' });
     }
-    await recipe.remove();
-    res.status(200).json({
-      success: true,
-      data: {}
-    });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
+    try {
+        const recipe = await Recipe.findOne({ _id: req.params.id, user: req.user.id });
+        if (!recipe) {
+            return res.status(404).json({ success: false, error: 'No recipe found' });
+        }
+        await recipe.deleteOne();
+        res.status(200).json({
+            success: true,
+            data: {}
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
 };

@@ -8,6 +8,7 @@ const port = 3000;
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const methodOverride = require('method-override'); // Added this line
 require('./src/db');
 
 app.use(express.json());
@@ -16,6 +17,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
+app.use(methodOverride('_method')); // Added this line
 app.use('/', indexRoutes);
 
 app.get('/', function (req, res) {

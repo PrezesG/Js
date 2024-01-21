@@ -25,7 +25,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ success: false, error: 'Invalid Credentials' });
     }
-    req.session.userId = user._id; // Save user ID in session
+    req.session.userId = user._id; 
     res.status(200).json({
       success: true,
       data: user

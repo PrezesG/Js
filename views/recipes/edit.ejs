@@ -2,20 +2,95 @@
 <html>
 <head>
     <title>Edit Recipe</title>
+    <%- include('../layout', { user: user }) %>
+    <style>
+        body {
+            background-image: url('/images/create.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+        }
+        .form-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            height: calc(100vh - 60px);
+            padding: 0 20px;
+        }
+        .container {
+            border: 5px solid black;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            width: 80%;
+            max-width: 550px;
+            background-color: transparent;
+            margin-left: auto;
+            margin-right: 20%;
+            font-size: 2em;
+        }
+        .container textarea {
+            height: 100px;
+        }
+        h1 {
+            font-size: 3em;
+            color: white;
+            text-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        label {
+            display: block;
+            margin: 10px 0;
+            color: #FFFFFF;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+        }
+        input, textarea {
+            display: block;
+            margin: 10px 0;
+            color: #000000;
+            font-weight: normal;
+            font-size: 1.2em;
+        }
+        textarea {
+            height: 100px;
+        }
+        button {
+            display: block;
+            margin: 10px 0;
+            color: #000000;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
 </head>
 <body>
-    <%- include('../layout', { user: user }) %>
-    <h1>Edit Recipe</h1>
-    <form id="editForm" action="" method="POST">
-        <input type="hidden" name="_method" value="PUT">
-        <label for="title">Title:</label>
-        <input type="text" id="title" name="title" required>
-        <label for="ingredients">Ingredients:</label>
-        <textarea id="ingredients" name="ingredients" required></textarea>
-        <label for="instructions">Instructions:</label>
-        <textarea id="instructions" name="instructions" required></textarea>
-        <button type="submit">Update Recipe</button>
-    </form>
+    <div class="form-container">
+        <div class="container">
+            <h1>Edit Recipe</h1>
+            <form id="editForm" action="" method="POST">
+    <input type="hidden" name="_method" value="PUT">
+    <label for="title">Title:</label>
+    <input type="text" id="title" name="title" value="<%= recipe.title %>" required>
+
+    <label for="ingredients">Ingredients:</label>
+    <textarea id="ingredients" name="ingredients" required><%= recipe.ingredients %></textarea>
+
+    <label for="instructions">Instructions:</label>
+    <textarea id="instructions" name="instructions" required><%= recipe.instructions %></textarea>
+
+    <button type="submit">Update Recipe</button>
+</form>
+        </div>
+    </div>
     <script src="edit.js"></script>
 </body>
 </html>
