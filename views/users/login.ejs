@@ -4,9 +4,9 @@
     <title>Login</title>
 </head>
 <body>
-    <%- include('../layout') %>
+     <%- include('../layout', { user: null }) %>
     <h1>Login</h1>
-    <form action="/login" method="POST">
+    <form action="/users/login" method="POST">
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
         <label for="password">Password:</label>

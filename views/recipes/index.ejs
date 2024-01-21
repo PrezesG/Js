@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Home Page</title>
+    <title>All Recipes</title>
 </head>
 <body>
-    <%- include('../layout') %>
-    <h1>Welcome to our website!</h1>
-    <nav>
-        <a href="/login">Login</a> |
-        <a href="/register">Register</a>
-    </nav>
+    <%- include('../layout', { user: user }) %>
+    <h1>All Recipes</h1>
+    <% if (user) { %>
+        <h2>Welcome, <%= user.username %>!</h2>
+    <% } %>
+    <ul>
+       Hello World
+    </ul>
+    <h1>All Recipes</h1>
+<ul>
+    <% recipes.forEach(recipe => { %>
+        <li><%= recipe.title %></li>
+    <% }); %>
+</ul>
 </body>
 </html>

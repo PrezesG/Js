@@ -9,15 +9,11 @@ exports.register = async (req, res) => {
   const { username, password } = req.body;
   try {
     const user = await User.create({ username, password });
-    res.status(201).json({
-      success: true,
-      data: user
-    });
+    res.status(201).render('users/registered', { user: user });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
 };
-
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -29,6 +25,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ success: false, error: 'Invalid Credentials' });
     }
+    req.session.userId = user._id; // Save user ID in session
     res.status(200).json({
       success: true,
       data: user
