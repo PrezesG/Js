@@ -1,0 +1,1801 @@
+†¨DateTime×ÿ¡«0Pe­&ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$56a97da2-68fc-4b91-b3f2-54c7f664a1f4Ù$43d758df-347a-4470-9f5e-1031ec41d426š†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference¯#file:'User.js'¥ValueÈ"dÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ// User.js
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const UserSchema = new mongoose.Schema({
+    username: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    password: {
+        type: String,
+        required: true
+    }
+});
+
+UserSchema.pre('save', function (next) {
+    if (!this.isModified('password')) return next();
+
+    bcrypt.hash(this.password, 10, (err, passwordHash) => {
+        if (err) return next(err);
+
+        this.password = passwordHash;
+        next();
+    });
+});
+
+UserSchema.methods.comparePassword = function (password, cb) {
+    if (typeof cb !== 'function') {
+        throw new Error('Callback must be a function');
+    }
+
+    bcrypt.compare(password, this.password, (err, isMatch) => {
+        if (err) return cb(err);
+        else {
+            if (!isMatch) return cb(null, isMatch);
+            return cb(null, this);
+        }
+    });
+};
+
+const User = mongoose.model('User', UserSchema);
+module.exports = User;
+¯OriginalContentÀªSelections¨FilePathÙ2C:\Users\User\Desktop\ABC IT\Js\src\models\User.js¨LanguageªJavaScript†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference¹#file:'userController.js'¥ValueÈldÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚPconst User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const path = require('path');
+const session = require('express-session');
+
+
+
+exports.register = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await User.create({ username, password });
+    res.status(201).render('users/registered', { user: user });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+exports.login = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid Credentials' });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, error: 'Invalid Credentials' });
+    }
+    req.session.userId = user._id; // Save user ID in session
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (err) {
+    res.redirect(page);
+  }
+};¯OriginalContentÀªSelections¨FilePathÙAC:\Users\User\Desktop\ABC IT\Js\src\controllers\userController.js¨LanguageªJavaScript†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference±#file:'Recipe.js'¥ValueÈÊdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ»// Recipe.js
+const mongoose = require('mongoose');
+
+const RecipeSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  ingredients: {
+    type: String,
+    required: true
+  },
+  instructions: {
+    type: String,
+    required: true
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }
+});
+
+module.exports = mongoose.model('Recipe', RecipeSchema);¯OriginalContentÀªSelections¨FilePathÙ4C:\Users\User\Desktop\ABC IT\Js\src\models\Recipe.js¨LanguageªJavaScript†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference»#file:'recipeController.js'¥ValueÈ
+dÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚğconst Recipe = require('../models/Recipe');
+
+exports.createRecipe = async (req, res) => {
+    try {
+        if (!req.user || !req.body) {
+            throw new Error('Invalid request');
+        }
+        const { title, ingredients, instructions } = req.body;
+        const user = req.user._id; // Assuming you have a middleware that sets req.user
+        const recipe = new Recipe({ title, ingredients, instructions, user });
+        await recipe.save();
+        // Recipe created successfully
+        res.redirect('/recipes');
+    } catch (err) {
+        console.log(err);
+        res.redirect('/recipe/new');
+    }
+};
+  
+
+  const getAllRecipes = async (req, res) => {
+    try {
+        const recipes = await Recipe.find();
+        res.render('recipes', { recipes: recipes });
+    } catch (err) {
+        res.status(500).send(err);
+    }
+};
+
+exports.getRecipe = async (req, res) => {
+  try {
+    const recipe = await Recipe.findOne({ _id: req.params.id, user: req.user.id });
+    if (!recipe) {
+      return res.status(404).json({ success: false, error: 'No recipe found' });
+    }
+    res.status(200).json({
+      success: true,
+      data: recipe
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+exports.updateRecipe = async (req, res) => {
+  try {
+    let recipe = await Recipe.findOne({ _id: req.params.id, user: req.user.id });
+    if (!recipe) {
+      return res.status(404).json({ success: false, error: 'No recipe found' });
+    }
+    recipe = await Recipe.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    res.status(200).json({
+      success: true,
+      data: recipe
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+exports.deleteRecipe = async (req, res) => {
+  try {
+    const recipe = await Recipe.findOne({ _id: req.params.id, user: req.user.id });
+    if (!recipe) {
+      return res.status(404).json({ success: false, error: 'No recipe found' });
+    }
+    await recipe.remove();
+    res.status(200).json({
+      success: true,
+      data: {}
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};¯OriginalContentÀªSelections¨FilePathÙCC:\Users\User\Desktop\ABC IT\Js\src\controllers\recipeController.js¨LanguageªJavaScript†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference¯#file:'new.ejs'¥ValueÈtdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚn<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Recipe</title>
+</head>
+<body>
+    <%- include('../layout', { user: user }) %>
+    <h1>Create New Recipe</h1>
+    <form action="/recipe/new" method="POST">
+  <label for="title">Title:</label>
+  <input type="text" id="title" name="title" required>
+
+  <label for="ingredients">Ingredients:</label>
+  <textarea id="ingredients" name="ingredients" required></textarea>
+
+  <label for="instructions">Instructions:</label>
+  <textarea id="instructions" name="instructions" required></textarea>
+
+  <input type="submit" value="Submit">
+</form>
+</body>
+</html>¯OriginalContentÀªSelections¨FilePathÙ5C:\Users\User\Desktop\ABC IT\Js\views\recipes\new.ejs¨LanguageÀ†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference²#file:'layout.ejs'¥ValueÈMdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÙM   <%- include('navbar', { user: user }) %>
+    <%- include('footer') %>
+  ¯OriginalContentÀªSelections¨FilePathÙ0C:\Users\User\Desktop\ABC IT\Js\views\layout.ejs¨LanguageÀ†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference±#file:'index.ejs'¥ValueÈ¶dÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ®<!DOCTYPE html>
+<html>
+<head>
+    <title>All Recipes</title>
+</head>
+<body>
+    <%- include('../layout', { user: user }) %>
+    <h1>All Recipes</h1>
+    <% if (user) { %>
+        <h2>Welcome, <%= user.username %>!</h2>
+    <% } %>
+    <ul>
+       Hello World
+    </ul>
+    <h1>All Recipes</h1>
+<ul>
+    <% recipes.forEach(recipe => { %>
+        <li><%= recipe.title %></li>
+    <% }); %>
+</ul>
+</body>
+</html>¯OriginalContentÀªSelections¨FilePathÙ7C:\Users\User\Desktop\ABC IT\Js\views\recipes\index.ejs¨LanguageÀ†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference­#file:'db.js'¥ValueÈdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚrequire('dotenv').config();
+const mongoose = require('mongoose');
+
+const login = process.env.DB_USERNAME;
+const pass = process.env.DB_PASSWORD;
+const name = process.env.DB_NAME;
+mongoose.connect("mongodb+srv://"+login+":"+ pass +"@cluster0.2pegah7.mongodb.net/"+ name +"?retryWrites=true&w=majority")
+
+
+const db = mongoose.connection;
+
+db.on('error', console.error.bind(console, 'BÅ‚Ä…d poÅ‚Ä…czenia:'));
+db.once('open', function() {
+  console.log('PoÅ‚Ä…czenie z bazÄ… danych ' + name + ' OK');
+});¯OriginalContentÀªSelections¨FilePathÙ)C:\Users\User\Desktop\ABC IT\Js\src\db.js¨LanguageªJavaScript†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference®#file:'app.js'¥ValueÈ
+ØdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ	×const express = require('express');
+const app = express();
+const indexRoutes = require('./src/routes/index');
+const User = require('./src/models/User');
+const mongoose = require('mongoose');
+const { name } = require('ejs');
+const port = 3000;
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+require('./src/db');
+
+app.use(express.json());
+app.use(cookieParser());
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use('/', indexRoutes);
+app.use(express.urlencoded({ extended: false }));
+
+app.get('/users/login', (req, res) => {
+    res.render('users/login');
+})
+
+app.post('/users/login', async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.body.username });
+        if (user) {
+            user.comparePassword(req.body.password, (err, isMatch) => {
+                if (err) {
+                    console.log(err);
+                    res.send("An error occurred");
+                } else if (isMatch) {
+                    const token = jwt.sign({ username: user.username }, 'your_jwt_secret');
+                    res.cookie('token', token);
+                    res.redirect('/recipes');
+                } else {
+                    res.send("Invalid username or password");
+                }
+            });
+        } else {
+            res.send("Invalid username or password");
+        }
+    } catch (err) {
+        console.log(err);
+        res.send("An error occurred");
+    }
+});
+
+//app.get('/recipes', (req, res) => {
+//    const token = req.cookies.token;
+//    if (token) {
+//        jwt.verify(token, 'your_jwt_secret', (err, user) => {
+//            if (err) {
+//                return res.sendStatus(403);
+//            }
+//            res.render('recipes/index', { user: user });
+//        });
+//    } else {
+//        res.render('recipes/index');
+//    }
+//});
+app.get('/users/logout', (req, res) => {
+    res.clearCookie('token');
+    res.redirect('/users/login');
+});
+
+app.get('/users/register', (req, res) => {
+    res.render('users/register');
+})
+
+app.post('/users/register', async (req, res) => {
+    const data = {
+        username: req.body.username,
+        password: req.body.password,
+    }
+    await User.create(data);
+
+    res.render('users/login', { username: data.username });
+})
+
+app.listen(port, () => {
+    console.log(`App listening at http://localhost:${port}`);
+});
+¯OriginalContentÀªSelections¨FilePathÙ&C:\Users\User\Desktop\ABC IT\Js\app.js¨LanguageªJavaScript†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$56a97da2-68fc-4b91-b3f2-54c7f664a1f4©Reference°#file:'index.js'¥ValueÈ
+dÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚüconst express = require('express');
+const router = express.Router();
+const Recipe = require('../models/Recipe');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+// Import controllers
+const mongoose = require('mongoose');
+const recipeController = require('../controllers/recipeController');
+const userController = require('../controllers/userController');
+
+//router.post('/users/register', async (req, res) => {
+//    const { username, password } = req.body;
+//    const user = new User({ username, password });
+//    try {
+//        await user.sav e();
+//        // User registered successfully, redirect to login page
+//        res.redirect('/users/login');
+//    } catch (err) {
+//        // Handle error
+//        console.log(err);
+//        res.redirect('/users/register');
+//    }
+//});
+
+//router.route('/login')
+//    .get((req, res) => res.render('users/login')) // Show login page
+//    .post(userController.login); // Handle login
+
+// Recipe routes
+//router.route('/recipes')
+//    .get((req, res) => {
+//        // Assuming `user` is available in `req.user`
+//        const user = req.user;
+
+//        res.render('recipes/index', { user: user });
+//    });
+router.get('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, user) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
+            res.render('recipes/new', { user: user });
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});
+
+
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+            if (err) {
+                console.log(err);
+                res.redirect('/recipe/new');
+            } else {
+                console.log(decodedToken); // Log the decoded token
+
+                const { title, ingredients, instructions } = req.body;
+                const user = decodedToken.username; // Assuming the decoded token contains the user's ID
+
+                if (!title) console.log('Missing title');
+                if (!ingredients) console.log('Missing ingredients');
+                if (!instructions) console.log('Missing instructions');
+                if (!user) console.log('Missing user');
+                if (title && ingredients && instructions && user) {
+                    const recipe = new Recipe({ title, ingredients, instructions, user });
+                    try {
+                        await recipe.save();
+                        // Recipe created successfully
+                        res.redirect('/recipes');
+                    } catch (err) {
+                        // Handle error
+                        console.log(err);
+                        res.redirect('/recipe/new');
+                    }
+                } else {
+                    console.log('Missing required fields');
+                    res.redirect('/recipe/new');
+                }
+            }
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});
+router.get('/recipes', (req, res) => {
+    const token = req.cookies.token;
+    let user = null;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, decodedUser) => {
+            if (err) {
+                console.log(err);
+            } else {
+                user = decodedUser;
+            }
+        });
+    }
+    Recipe.find({})
+        .then(allRecipes => {
+            res.render('recipes/index', { recipes: allRecipes, user: user });
+        })
+        .catch(err => {
+            console.log(err);
+        });
+});
+//router.route('/recipe/:id')
+//    .get((req, res) => res.render('recipes/show')) // Show specific recipe
+//    .put((req, res) => res.render('recipes/edit')) // Show edit recipe form
+//    .delete(recipeController.deleteRecipe);
+
+    
+module.exports = router;¯OriginalContentÀªSelections¨FilePathÙ3C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js¨LanguageªJavaScript‘’“¥Value Ú$based on #file:'index.js' #file:'app.js' #file:'db.js' #file:'index.ejs' #file:'layout.ejs' #file:'new.ejs' #file:'recipeController.js' #file:'Recipe.js' #file:'userController.js' #file:'User.js'  what could be causing this problem "Missing required fields" when trying to create a new recipeÀ¨Response…§ContentÚŸThe error message "Missing required fields" is being logged in the `index.js` file, specifically in the POST route for `/recipe/new`. This error occurs when the `title`, `ingredients`, `instructions`, or `user` fields are not provided in the request body.
+
+```JavaScript
+if (!title) console.log('Missing title');
+if (!ingredients) console.log('Missing ingredients');
+if (!instructions) console.log('Missing instructions');
+if (!user) console.log('Missing user');
+if (title && ingredients && instructions && user) {
+    const recipe = new Recipe({ title, ingredients, instructions, user });
+    try {
+        await recipe.save();
+        // Recipe created successfully
+        res.redirect('/recipes');
+    } catch (err) {
+        // Handle error
+        console.log(err);
+        res.redirect('/recipe/new');
+    }
+} else {
+    console.log('Missing required fields');
+    res.redirect('/recipe/new');
+}
+```
+
+Here are a few things you could check:
+
+1. **Form Data**: Ensure that the form in `new.ejs` is correctly sending the `title`, `ingredients`, and `instructions` fields. The `name` attributes of the form inputs should match these field names.
+
+2. **User Authentication**: The `user` field is being set from the decoded JWT token. Ensure that the token is being correctly set and decoded. Also, make sure that the decoded token contains the `username` field.
+
+3. **Middleware**: Ensure that the middleware for parsing the request body is correctly set up in `app.js`. You should have `app.use(express.urlencoded({ extended: false }));` for parsing URL-encoded bodies, and `app.use(express.json());` for parsing JSON bodies.
+
+4. **Request Type**: If you're testing this using a tool like Postman, ensure that you're sending a POST request and that the request body is correctly formatted.
+
+If all these are correctly set up and you're still facing the issue, you might want to add more logging to your code to help identify which field is missing.¤Type ¦Status¯FollowUpPrompts’ÙIHow can I add more logging to my code to identify which field is missing?ÙƒCan you show me how to ensure that my form in `new.ejs` is correctly sending the `title`, `ingredients`, and `instructions` fields?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿÏPe­‰ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$ff154e3e-1b71-4679-a32b-23a86296e9c3Ù$40aaa770-de51-4f94-8118-1d9cf63e6fc8‘†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$ff154e3e-1b71-4679-a32b-23a86296e9c3©Reference®#file:'app.js'¥ValueÈ
+ØdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ	×const express = require('express');
+const app = express();
+const indexRoutes = require('./src/routes/index');
+const User = require('./src/models/User');
+const mongoose = require('mongoose');
+const { name } = require('ejs');
+const port = 3000;
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+require('./src/db');
+
+app.use(express.json());
+app.use(cookieParser());
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use('/', indexRoutes);
+app.use(express.urlencoded({ extended: false }));
+
+app.get('/users/login', (req, res) => {
+    res.render('users/login');
+})
+
+app.post('/users/login', async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.body.username });
+        if (user) {
+            user.comparePassword(req.body.password, (err, isMatch) => {
+                if (err) {
+                    console.log(err);
+                    res.send("An error occurred");
+                } else if (isMatch) {
+                    const token = jwt.sign({ username: user.username }, 'your_jwt_secret');
+                    res.cookie('token', token);
+                    res.redirect('/recipes');
+                } else {
+                    res.send("Invalid username or password");
+                }
+            });
+        } else {
+            res.send("Invalid username or password");
+        }
+    } catch (err) {
+        console.log(err);
+        res.send("An error occurred");
+    }
+});
+
+//app.get('/recipes', (req, res) => {
+//    const token = req.cookies.token;
+//    if (token) {
+//        jwt.verify(token, 'your_jwt_secret', (err, user) => {
+//            if (err) {
+//                return res.sendStatus(403);
+//            }
+//            res.render('recipes/index', { user: user });
+//        });
+//    } else {
+//        res.render('recipes/index');
+//    }
+//});
+app.get('/users/logout', (req, res) => {
+    res.clearCookie('token');
+    res.redirect('/users/login');
+});
+
+app.get('/users/register', (req, res) => {
+    res.render('users/register');
+})
+
+app.post('/users/register', async (req, res) => {
+    const data = {
+        username: req.body.username,
+        password: req.body.password,
+    }
+    await User.create(data);
+
+    res.render('users/login', { username: data.username });
+})
+
+app.listen(port, () => {
+    console.log(`App listening at http://localhost:${port}`);
+});
+¯OriginalContentÀªSelections¨FilePathÙ&C:\Users\User\Desktop\ABC IT\Js\app.js¨LanguageªJavaScript‘’“¥Value Ú3.	Middleware: Ensure that the middleware for parsing the request body is correctly set up in app.js. You should have app.use(express.urlencoded({ extended: false })); for parsing URL-encoded bodies, and app.use(express.json()); for parsing JSON bodies.
+4.	Request T #file:'app.js' À¨Response…§ContentÚèBased on the provided `app.js` file, it seems like the middleware for parsing the request body is correctly set up. You have both `app.use(express.json());` and `app.use(express.urlencoded({ extended: false }));` in your code, which means your Express app should be able to handle both JSON and URL-encoded bodies.
+
+```JavaScript
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+```
+
+However, the order of middleware and routes in Express matters. In your case, the middleware for parsing the request body should be placed before the routes. This is because middleware in Express is executed in the order it is defined. If the middleware for parsing the request body is defined after the routes, the request body won't be parsed when the route handlers are executed.
+
+In your `app.js` file, you have correctly placed the middleware before the routes:
+
+```JavaScript
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use('/', indexRoutes);
+```
+
+So, the issue of "Missing required fields" when trying to create a new recipe is not likely due to the middleware setup in `app.js`. 
+
+As for the request type, if you're testing this using a tool like Postman, ensure that you're sending a POST request and that the request body is correctly formatted. If you're using a form in your EJS file to submit the recipe data, ensure that the form method is set to "POST" and the input fields have the correct "name" attributes that match the fields in your Recipe model.¤Type ¦Status¯FollowUpPrompts’Ù\How can I ensure that the form in my EJS file is correctly set up to submit the recipe data?ÙVCan you show me how to add more logging to my code to identify which field is missing?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿw{e­ÊªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$68a43a5c-f479-4a9c-a020-c5b7caffa223Ù$3053e643-37df-4b94-8ef4-fa1bd2b95638‘’“¥Value ÚÂC:\Users\User\Desktop\ABC IT\Js\src\routes\index.js:71
+                    const Recipe = new Recipe({ title, ingredients, instructions, user });
+                                   ^
+
+ReferenceError: Cannot access 'Recipe' before initialization
+    at C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js:71:36
+    at C:\Users\User\Desktop\ABC IT\Js\node_modules\jsonwebtoken\verify.js:261:12
+    at getSecret (C:\Users\User\Desktop\ABC IT\Js\node_modules\jsonwebtoken\verify.js:97:14)
+    at module.exports [as verify] (C:\Users\User\Desktop\ABC IT\Js\node_modules\jsonwebtoken\verify.js:101:10)
+    at C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js:56:13
+    at Layer.handle [as handle_request] (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\route.js:144:13)
+    at Route.dispatch (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\route.js:114:3)
+    at Layer.handle [as handle_request] (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\index.js:284:15
+
+Node.js v20.11.0À¨Response…§ContentÚÛThe error message "Cannot access 'Recipe' before initialization" is indicating that you're trying to use the `Recipe` variable before it has been defined. 
+
+In your code, you're trying to create a new instance of `Recipe` and assign it to a constant also named `Recipe`. This is causing a conflict because you're trying to declare a constant with the same name as an existing variable or class.
+
+Here's the problematic line:
+
+```JavaScript
+const Recipe = new Recipe({ title, ingredients, instructions, user });
+```
+
+To fix this issue, you should use a different name for the instance of `Recipe`. For example, you could name it `newRecipe`:
+
+```JavaScript
+const newRecipe = new Recipe({ title, ingredients, instructions, user });
+```
+
+Then, when you want to save the recipe, you would use `newRecipe.save()` instead of `Recipe.save()`. 
+
+Here's how the corrected code would look:
+
+```JavaScript
+const newRecipe = new Recipe({ title, ingredients, instructions, user });
+try {
+    await newRecipe.save();
+    // Recipe created successfully
+    res.redirect('/recipes');
+} catch (err) {
+    // Handle error
+    console.log(err);
+    res.redirect('/recipe/new');
+}
+```
+
+This should resolve the "Cannot access 'Recipe' before initialization" error.¤Type ¦Status¯FollowUpPrompts³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ	^qe­)ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$09e3422b-b81b-405c-82d2-41a71631098fÙ$d3beed90-1ddb-4daa-b0a8-d3cef7ab4cf6‘†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$09e3422b-b81b-405c-82d2-41a71631098f©ReferenceÀ¥ValueÈ"dÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚüconst express = require('express');
+const router = express.Router();
+const Recipe = require('../models/Recipe');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+// Import controllers
+const mongoose = require('mongoose');
+const recipeController = require('../controllers/recipeController');
+const userController = require('../controllers/userController');
+
+//router.post('/users/register', async (req, res) => {
+//    const { username, password } = req.body;
+//    const user = new User({ username, password });
+//    try {
+//        await user.sav e();
+//        // User registered successfully, redirect to login page
+//        res.redirect('/users/login');
+//    } catch (err) {
+//        // Handle error
+//        console.log(err);
+//        res.redirect('/users/register');
+//    }
+//});
+
+//router.route('/login')
+//    .get((req, res) => res.render('users/login')) // Show login page
+//    .post(userController.login); // Handle login
+
+// Recipe routes
+//router.route('/recipes')
+//    .get((req, res) => {
+//        // Assuming `user` is available in `req.user`
+//        const user = req.user;
+
+//        res.render('recipes/index', { user: user });
+//    });
+router.get('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, user) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
+            res.render('recipes/new', { user: user });
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});
+
+
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+            if (err) {
+                console.log(err);
+                res.redirect('/recipe/new');
+            } else {
+                console.log(decodedToken); // Log the decoded token
+
+                const { title, ingredients, instructions } = req.body;
+                const user = decodedToken.id; // Assuming the decoded token contains the user's ID
+
+                if (!title) console.log('Missing title');
+                if (!ingredients) console.log('Missing ingredients');
+                if (!instructions) console.log('Missing instructions');
+                if (!user) console.log('Missing user');
+                if (title && ingredients && instructions && user) {
+                    const newRecipe = new Recipe({ title, ingredients, instructions, user });
+                    try {
+                        await newRecipe.save();
+                        // Recipe created successfully
+                        res.redirect('/recipes');
+                    } catch (err) {
+                        // Handle error
+                        console.log(err);
+                        res.redirect('/recipe/new');
+                    }
+                } else {
+                    console.log('Missing required fields');
+                    res.redirect('/recipe/new');
+                }
+            }
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});
+router.get('/recipes', (req, res) => {
+    const token = req.cookies.token;
+    let user = null;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, decodedUser) => {
+            if (err) {
+                console.log(err);
+            } else {
+                user = decodedUser;
+            }
+        });
+    }
+    Recipe.find({})
+        .then(allRecipes => {
+            res.render('recipes/index', { recipes: allRecipes, user: user });
+        })
+        .catch(err => {
+            console.log(err);
+        });
+});
+//router.route('/recipe/:id')
+//    .get((req, res) => res.render('recipes/show')) // Show specific recipe
+//    .put((req, res) => res.render('recipes/edit')) // Show edit recipe form
+//    .delete(recipeController.deleteRecipe);
+
+    
+module.exports = router;¯OriginalContentÀªSelections‘ƒ¥CaretÀ¥StartÍ?£EndÍ¡¨FilePathÙ3C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js¨LanguageªJavaScript‘’“¥Value ÙSconst user = decodedToken.id; // Assuming the decoded token contains the user's ID À¨Response…§ContentÚ,The line of code you've highlighted is extracting the `id` from the `decodedToken` object and assigning it to the `user` variable:
+
+```JavaScript
+const user = decodedToken.id; // Assuming the decodedToken contains the user's ID
+```
+
+This line assumes that the decoded JWT token contains an `id` field which represents the user's ID. If the `id` field is not present in the decoded token, `user` will be `undefined`, which could be causing the "Missing required fields" error when trying to create a new recipe.
+
+To fix this, you need to ensure that the JWT token is correctly set and contains the `id` field. When you create the JWT token, you should include the user's ID in the payload. Here's an example:
+
+```JavaScript
+const token = jwt.sign({ id: user._id }, 'your_jwt_secret');
+```
+
+Then, when you decode the token, you'll be able to access the user's ID:
+
+```JavaScript
+jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+    if (err) {
+        console.log(err);
+        res.redirect('/recipe/new');
+    } else {
+        const user = decodedToken.id;
+        // rest of your code...
+    }
+});
+```
+
+If the `id` field is correctly included in the token but you're still getting the "Missing required fields" error, you might want to add more logging to your code to help identify which field is missing.¤Type ¦Status¯FollowUpPrompts³CodeVulnerabilities‘†¢Id «StartOffset ©EndOffset ¤Type³FallbackDisplayTypeµHardcoded CredentialsºFallbackDisplayDescriptionÙ>Embedding credentials in source code risks unauthorized access¶LoggedSkillInvocationsÀ†¨DateTime×ÿ\ğ¾0e­–ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$79054525-ea05-4eed-9cb5-3644a288f23eÙ$edcc59b1-b8fe-4bdf-bf6d-bdab729d6ba7‘’“¥Value Ù:im still missing user while trying to create a new reepie À¨Response…§ContentÚThe issue seems to be with how you're assigning the `user` field in the new recipe. In your code, you're assigning `user` to `decodedToken.id`, which assumes that the decoded JWT token contains an `id` field. 
+
+```JavaScript
+const user = decodedToken.id;
+```
+
+However, if the `id` field is not present in the decoded token, `user` will be `undefined`, which could be causing the "Missing required fields" error when trying to create a new recipe.
+
+To fix this, you need to ensure that the JWT token is correctly set and contains the `id` field. When you create the JWT token, you should include the user's ID in the payload. Here's an example:
+
+```JavaScript
+const token = jwt.sign({ id: user._id }, 'your_jwt_secret');
+```
+
+Then, when you decode the token, you'll be able to access the user's ID:
+
+```JavaScript
+jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+    if (err) {
+        console.log(err);
+        res.redirect('/recipe/new');
+    } else {
+        const user = decodedToken.id;
+        // rest of your code...
+    }
+});
+```
+
+If the `id` field is correctly included in the token but you're still getting the "Missing required fields" error, you might want to add more logging to your code to help identify which field is missing.
+
+Also, ensure that the `user` field in your `Recipe` model is of type `mongoose.Schema.Types.ObjectId` and it references the `User` model. This is because you're assigning the user's ID (which is an ObjectId) to the `user` field in the new recipe. Here's how the `user` field in your `Recipe` model should look:
+
+```JavaScript
+user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+}
+```
+
+This will create a relationship between the `Recipe` and `User` models, where each recipe is linked to a user via the user's ID.¤Type ¦Status¯FollowUpPrompts³CodeVulnerabilities‘†¢Id «StartOffset ©EndOffset ¤Type³FallbackDisplayTypeµHardcoded CredentialsºFallbackDisplayDescriptionÙ>Embedding credentials in source code risks unauthorized access¶LoggedSkillInvocationsÀ†¨DateTime×ÿèÛ£°e­ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$bec2bc8a-daaf-4714-8fc6-78db3f7f4e5bÙ$6eaef698-9218-4e53-bdac-c8fde4c63838‘’“¥Value ÙVThis looks the same as in my code, can i chage it somewhow in the verification proces À¨Response…§ContentÚøIf you're sure that the JWT token is correctly set and contains the `id` field, and the `user` field in your `Recipe` model is correctly defined, then the issue might be with how you're verifying the JWT token.
+
+In your current code, you're verifying the token and then immediately trying to create a new recipe inside the callback function:
+
+```JavaScript
+jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+    if (err) {
+        console.log(err);
+        res.redirect('/recipe/new');
+    } else {
+        const user = decodedToken.id;
+        // rest of your code...
+    }
+});
+```
+
+However, this might be causing issues if the token verification is taking longer than expected, or if there's an error during the verification process.
+
+One way to handle this is to use a middleware function for token verification. This function would verify the token and add the user's ID to the request object, and then call `next()` to move on to the next middleware function or route handler. Here's an example:
+
+```JavaScript
+function verifyToken(req, res, next) {
+    const token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        // if everything good, save to request for use in other routes
+        req.userId = decoded.id;
+        next();
+    });
+}
+```
+
+Then, in your route for creating a new recipe, you would use this middleware function and access the user's ID from `req.userId`:
+
+```JavaScript
+app.post('/recipe/new', verifyToken, async (req, res) => {
+    const { title, ingredients, instructions } = req.body;
+    const user = req.userId;
+    // rest of your code...
+});
+```
+
+This way, the token is verified before the route handler is executed, and you can be sure that the user's ID is available when you're creating a new recipe.¤Type ¦Status¯FollowUpPrompts’ÙCHow can I add more fields to the JWT token payload when signing it?ÙNCan I use the same middleware function for token verification in other routes?³CodeVulnerabilities‘†¢Id «StartOffset ©EndOffset ¤Type³FallbackDisplayTypeµHardcoded CredentialsºFallbackDisplayDescriptionÙ>Embedding credentials in source code risks unauthorized access¶LoggedSkillInvocationsÀ†¨DateTime×ÿgFšĞe­`ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$0186c5a9-72bb-4bf2-8fd6-5af93fa698e1Ù$c386b7fa-4478-4606-95ca-0a211439b13b‘’“¥Value Ú*function verifyToken(req, res, next) {
+    const token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        // if everything good, save to request for use in other routes
+        req.userId = decoded.id;
+        next();
+    });
+} how an i impliment this À¨Response…§ContentÚıTo implement the `verifyToken` middleware function, you need to do the following:
+
+1. **Define the function**: You've already done this. The `verifyToken` function takes three arguments: `req`, `res`, and `next`. It verifies the JWT token and adds the user's ID to the `req` object.
+
+```JavaScript
+function verifyToken(req, res, next) {
+    const token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        // if everything good, save to request for use in other routes
+        req.userId = decoded.id;
+        next();
+    });
+}
+```
+
+2. **Use the function as middleware**: In your route for creating a new recipe, use `verifyToken` as middleware. This means that `verifyToken` will be executed before the route handler.
+
+```JavaScript
+app.post('/recipe/new', verifyToken, async (req, res) => {
+    const { title, ingredients, instructions } = req.body;
+    const user = req.userId;
+    // rest of your code...
+});
+```
+
+3. **Send the token in the request headers**: When you're making a request to the `/recipe/new` route, you need to include the JWT token in the headers. The token should be included under the `x-access-token` key. If you're using a tool like Postman, you can set the headers in the "Headers" tab.
+
+Please note that the `verifyToken` function assumes that the JWT token is sent in the headers of the request. If you're sending the token in a different way (for example, in the body or as a URL parameter), you need to adjust the function to extract the token from the correct location.¤Type ¦Status¯FollowUpPrompts’Ù^How do I set the JWT token in the headers when making a request from my front-end application?Ù^Can I use this `verifyToken` middleware function for other routes that require authentication?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿÔ’Pe­ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$6a19a703-94fc-443a-9577-f186339c04efÙ$4bbb2eae-0719-4a82-8e7c-15ec96b692b1‘’“¥Value Ù-can you implement it inside the post comand ?À¨Response…§ContentÚ~Yes, you can implement the token verification directly inside the POST route. However, it's generally a good practice to separate concerns by using middleware for authentication. This makes your code more modular and easier to maintain.
+
+Here's how you can implement the token verification inside the POST route:
+
+```JavaScript
+app.post('/recipe/new', async (req, res) => {
+    const token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decoded) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = decoded.id;
+        const { title, ingredients, instructions } = req.body;
+        // rest of your code...
+    });
+});
+```
+
+In this code, the token is extracted from the request headers and verified. If the token is valid, the user's ID is extracted from the decoded token and used to create a new recipe. If the token is not valid or not provided, an error message is sent in the response.
+
+Please note that this code assumes that the JWT token is sent in the headers of the request. If you're sending the token in a different way (for example, in the body or as a URL parameter), you need to adjust the code to extract the token from the correct location.¤Type ¦Status¯FollowUpPrompts’Ù;How can I send the JWT token in the headers of the request?ÙiWhat should I do if the JWT token is being sent in the body or as a URL parameter instead of the headers?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ
+ïQ e­ ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$85953419-8e94-4ea8-834c-fff738706db4Ù$ffa0da54-33eb-4cbe-a900-d7514d88b588‘†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$85953419-8e94-4ea8-834c-fff738706db4©ReferenceÀ¥ValueÈÿdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚÙconst express = require('express');
+const router = express.Router();
+const Recipe = require('../models/Recipe');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+// Import controllers
+const mongoose = require('mongoose');
+const recipeController = require('../controllers/recipeController');
+const userController = require('../controllers/userController');
+
+//router.post('/users/register', async (req, res) => {
+//    const { username, password } = req.body;
+//    const user = new User({ username, password });
+//    try {
+//        await user.sav e();
+//        // User registered successfully, redirect to login page
+//        res.redirect('/users/login');
+//    } catch (err) {
+//        // Handle error
+//        console.log(err);
+//        res.redirect('/users/register');
+//    }
+//});
+
+//router.route('/login')
+//    .get((req, res) => res.render('users/login')) // Show login page
+//    .post(userController.login); // Handle login
+
+// Recipe routes
+//router.route('/recipes')
+//    .get((req, res) => {
+//        // Assuming `user` is available in `req.user`
+//        const user = req.user;
+
+//        res.render('recipes/index', { user: user });
+//    });
+router.get('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, user) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
+            res.render('recipes/new', { user: user });
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});
+
+
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+            if (err) {
+                console.log(err);
+                res.redirect('/recipe/new');
+            } else {
+                const user = decodedToken.id;
+                console.log(decodedToken); // Log the decoded token
+
+                const { title, ingredients, instructions } = req.body;
+                
+
+                if (!title) console.log('Missing title');
+                if (!ingredients) console.log('Missing ingredients');
+                if (!instructions) console.log('Missing instructions');
+                if (!user) console.log('Missing user');
+                if (title && ingredients && instructions && user) {
+                    const newRecipe = new Recipe({ title, ingredients, instructions, user });
+                    try {
+                        await newRecipe.save();
+                        // Recipe created successfully
+                        res.redirect('/recipes');
+                    } catch (err) {
+                        // Handle error
+                        console.log(err);
+                        res.redirect('/recipe/new');
+                    }
+                } else {
+                    console.log('Missing required fields');
+                    res.redirect('/recipe/new');
+                }
+            }
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});
+router.get('/recipes', (req, res) => {
+    const token = req.cookies.token;
+    let user = null;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, decodedUser) => {
+            if (err) {
+                console.log(err);
+            } else {
+                user = decodedUser;
+            }
+        });
+    }
+    Recipe.find({})
+        .then(allRecipes => {
+            res.render('recipes/index', { recipes: allRecipes, user: user });
+        })
+        .catch(err => {
+            console.log(err);
+        });
+});
+//router.route('/recipe/:id')
+//    .get((req, res) => res.render('recipes/show')) // Show specific recipe
+//    .put((req, res) => res.render('recipes/edit')) // Show edit recipe form
+//    .delete(recipeController.deleteRecipe);
+
+    
+module.exports = router;¯OriginalContentÀªSelections‘ƒ¥CaretÀ¥StartÍ€£EndÍ¨FilePathÙ3C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js¨LanguageªJavaScript‘’“¥Value ÚEImpliment this function verifyToken(req, res, next) {
+    const token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        // if everything good, save to request for use in other routes
+        req.userId = decoded.id;
+        next();
+    });
+}i this router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+            if (err) {
+                console.log(err);
+                res.redirect('/recipe/new');
+            } else {
+                const user = decodedToken.id;
+                console.log(decodedToken); // Log the decoded token
+
+                const { title, ingredients, instructions } = req.body;
+                
+
+                if (!title) console.log('Missing title');
+                if (!ingredients) console.log('Missing ingredients');
+                if (!instructions) console.log('Missing instructions');
+                if (!user) console.log('Missing user');
+                if (title && ingredients && instructions && user) {
+                    const newRecipe = new Recipe({ title, ingredients, instructions, user });
+                    try {
+                        await newRecipe.save();
+                        // Recipe created successfully
+                        res.redirect('/recipes');
+                    } catch (err) {
+                        // Handle error
+                        console.log(err);
+                        res.redirect('/recipe/new');
+                    }
+                } else {
+                    console.log('Missing required fields');
+                    res.redirect('/recipe/new');
+                }
+            }
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});À¨Response…§ContentÚˆYou can refactor your `router.post('/recipe/new')` route to use the `verifyToken` function directly inside the route. Here's how you can do it:
+
+```JavaScript
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        // if everything good, save to request for use in other routes
+        req.userId = decodedToken.id;
+
+        const user = req.userId;
+        console.log(decodedToken); // Log the decoded token
+
+        const { title, ingredients, instructions } = req.body;
+
+        if (!title) console.log('Missing title');
+        if (!ingredients) console.log('Missing ingredients');
+        if (!instructions) console.log('Missing instructions');
+        if (!user) console.log('Missing user');
+        if (title && ingredients && instructions && user) {
+            const newRecipe = new Recipe({ title, ingredients, instructions, user });
+            try {
+                await newRecipe.save();
+                // Recipe created successfully
+                res.redirect('/recipes');
+            } catch (err) {
+                // Handle error
+                console.log(err);
+                res.redirect('/recipe/new');
+            }
+        } else {
+            console.log('Missing required fields');
+            res.redirect('/recipe/new');
+        }
+    });
+});
+```
+
+In this refactored code, the `verifyToken` function is integrated directly into the route. The JWT token is verified, and if it's valid, the user's ID is extracted from the decoded token and used to create a new recipe. If the token is not valid or not provided, an error message is sent in the response.¤Type ¦Status¯FollowUpPrompts’Ù8How can I handle the case when the JWT token is expired?Ù/Can I add more fields to the JWT token payload?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ(°e­ NªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$e4157a43-64f3-464d-9b59-9e549d99c989Ù$8c203856-734a-4752-b749-5d50866a8839‘’“¥Value ¾Missing user i still get this À¨Response…§ContentÚIf you're still getting a "Missing user" error, it means that `req.userId` is `undefined` when you're trying to create a new recipe. This could be due to a few reasons:
+
+1. **The JWT token does not contain the user's ID**: When you create the JWT token, you should include the user's ID in the payload. Make sure that you're doing this when you create the token.
+
+2. **The JWT token is not being sent in the request**: The `verifyToken` function expects the JWT token to be sent in the cookies of the request. If you're not sending the token, or if you're sending it in a different way (for example, in the headers or the body of the request), `req.userId` will be `undefined`.
+
+3. **The JWT token is not being correctly decoded**: If there's an error during the token verification process, `req.userId` will be `undefined`. Make sure that you're correctly decoding the token and handling any errors that might occur.
+
+To help debug this issue, you could add more logging to your code. For example, you could log the JWT token and the decoded token:
+
+```JavaScript
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    console.log('Token:', token); // Log the token
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        console.log('Decoded token:', decodedToken); // Log the decoded token
+        // rest of your code...
+    });
+});
+```
+
+This will help you see if the token is being sent and decoded correctly. If the token is not being sent or decoded correctly, you'll need to fix this before you can create a new recipe.¤Type ¦Status¯FollowUpPrompts’ÙMHow can I ensure that the JWT token contains the user's ID when it's created?ÙfCan you show me how to log the cookies in Express to verify if the token is being sent in the request?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿuy0e­ ìªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$e3236d72-2ff0-46c7-9fa7-2b1c8428c89dÙ$0c12561d-2a8b-4b34-b1a3-420b65fcb21f‘’“¥Value ÙAcan you make the user conver into mongoose.Schema.Types.ObjectId,À¨Response…§ContentÚIf you want to convert the user ID into a `mongoose.Schema.Types.ObjectId`, you can use the `mongoose.Types.ObjectId()` function. This function takes a string and converts it into an ObjectId.
+
+Here's how you can do it in your route:
+
+```JavaScript
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = mongoose.Types.ObjectId(decodedToken.id);
+        // rest of your code...
+    });
+});
+```
+
+In this code, `decodedToken.id` is converted into an ObjectId and assigned to `user`. This ObjectId can then be used to create a new recipe.
+
+Please note that this is only necessary if your `Recipe` model expects the `user` field to be an ObjectId. If the `user` field in your `Recipe` model is of type `String`, you should not convert the user ID into an ObjectId. Instead, you should save the user ID as a string.¤Type ¦Status¯FollowUpPrompts’ÙIHow can I verify that the user ID is correctly included in the JWT token?Ù@Can I use the same method to convert other fields into ObjectId?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ,oZ e­!!ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$d349c48e-ed2b-462e-982e-6a643765f3e9Ù$d093c0e8-1678-42ec-a451-4c20187a55e1‘’“¥Value ÚLMissing required fields
+PS C:\Users\User\Desktop\ABC IT\Js> node app.js
+App listening at http://localhost:3000
+PoÅ‚Ä…czenie z bazÄ… danych PrzepisyPL OK
+C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js:61
+        const user = mongoose.Types.ObjectId(decodedToken.id);
+                                    ^
+
+TypeError: Class constructor ObjectId cannot be invoked without 'new'
+    at C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js:61:37
+    at C:\Users\User\Desktop\ABC IT\Js\node_modules\jsonwebtoken\verify.js:261:12
+    at getSecret (C:\Users\User\Desktop\ABC IT\Js\node_modules\jsonwebtoken\verify.js:97:14)
+    at module.exports [as verify] (C:\Users\User\Desktop\ABC IT\Js\node_modules\jsonwebtoken\verify.js:101:10)
+    at C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js:57:9
+    at Layer.handle [as handle_request] (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\route.js:144:13)
+    at Route.dispatch (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\route.js:114:3)
+    at Layer.handle [as handle_request] (C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\User\Desktop\ABC IT\Js\node_modules\express\lib\router\index.js:284:15
+
+Node.js v20.11.0À¨Response…§ContentÚ:The error message "Class constructor ObjectId cannot be invoked without 'new'" is indicating that you're trying to call `mongoose.Types.ObjectId()` as a function, but it's actually a class constructor.
+
+However, in your case, you don't need to convert `decodedToken.id` into an ObjectId. When you're creating a new recipe, you can assign `decodedToken.id` directly to `user`. Mongoose will automatically convert the string ID into an ObjectId when it saves the recipe.
+
+Here's how you can modify your code:
+
+```JavaScript
+jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+    if (err) {
+        return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+    }
+    const user = decodedToken.id; // No need to convert to ObjectId
+    // rest of your code...
+});
+```
+
+This should resolve the "Class constructor ObjectId cannot be invoked without 'new'" error. If you're still getting a "Missing user" error, it means that `decodedToken.id` is `undefined`. Make sure that you're including the user's ID in the JWT token when you create it.¤Type ¦Status¯FollowUpPrompts³CodeVulnerabilities‘†¢Id «StartOffset ©EndOffset ¤Type³FallbackDisplayTypeµHardcoded CredentialsºFallbackDisplayDescriptionÙ>Embedding credentials in source code risks unauthorized access¶LoggedSkillInvocationsÀ†¨DateTime×ÿ,je­!gªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$9a4c1f18-dede-4977-aeb1-b3dd9a4a7a63Ù$99cdee62-183c-412e-be27-c4d61358bb1c‘†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$9a4c1f18-dede-4977-aeb1-b3dd9a4a7a63©Reference±#file:'Recipe.js'¥ValueÈÊdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ»// Recipe.js
+const mongoose = require('mongoose');
+
+const RecipeSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  ingredients: {
+    type: String,
+    required: true
+  },
+  instructions: {
+    type: String,
+    required: true
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }
+});
+
+module.exports = mongoose.model('Recipe', RecipeSchema);¯OriginalContentÀªSelections¨FilePathÙ4C:\Users\User\Desktop\ABC IT\Js\src\models\Recipe.js¨LanguageªJavaScript‘’“¥Value ÙIcan i change the user type in #file:'Recipe.js'  to implement it easier ?À¨Response…§ContentÚ&The `user` field in your `Recipe` model is currently of type `mongoose.Schema.Types.ObjectId` and it references the `User` model. This is a common way to create a relationship between two models in Mongoose, where each recipe is linked to a user via the user's ID.
+
+If you're having trouble working with ObjectIds, you could change the `user` field to be of type `String`. However, this would mean that the `user` field would no longer be a reference to the `User` model. Instead, it would just be a string that contains the user's ID.
+
+Here's how you can modify your `Recipe` model:
+
+```JavaScript
+const RecipeSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  ingredients: {
+    type: String,
+    required: true
+  },
+  instructions: {
+    type: String,
+    required: true
+  },
+  user: {
+    type: String,
+    required: true
+  }
+});
+```
+
+In this modified model, the `user` field is of type `String`. When you create a new recipe, you can assign the user's ID (which should be a string) to `user`.
+
+Please note that by doing this, you lose the benefits of using references in Mongoose, such as the ability to populate the `user` field with the user's data. If you want to keep these benefits, you should keep the `user` field as an ObjectId and fix the issues with your current code.¤Type ¦Status¯FollowUpPrompts’ÙbHow can I revert back to using ObjectId if I want to use Mongoose's populate method in the future?ÙaCan I use both ObjectId and String types for the user field in different parts of my application?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿÏQy`e­!¡ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$af4c285d-176e-481f-a02d-5e3be6f5a209Ù$63fe2555-c3cf-4180-8aaa-e8afcf3a651f‘’“¥Value Ù-after that how do i modify my create command À¨Response…§ContentÚÏAfter changing the `user` field in your `Recipe` model to be of type `String`, you can create a new recipe by assigning the user's ID (which should be a string) to `user`. Here's how you can modify your route for creating a new recipe:
+
+```JavaScript
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = decodedToken.id; // No need to convert to ObjectId
+        const { title, ingredients, instructions } = req.body;
+
+        if (!title) console.log('Missing title');
+        if (!ingredients) console.log('Missing ingredients');
+        if (!instructions) console.log('Missing instructions');
+        if (!user) console.log('Missing user');
+        if (title && ingredients && instructions && user) {
+            const newRecipe = new Recipe({ title, ingredients, instructions, user });
+            try {
+                await newRecipe.save();
+                // Recipe created successfully
+                res.redirect('/recipes');
+            } catch (err) {
+                // Handle error
+                console.log(err);
+                res.redirect('/recipe/new');
+            }
+        } else {
+            console.log('Missing required fields');
+            res.redirect('/recipe/new');
+        }
+    });
+});
+```
+
+In this modified route, the user's ID is extracted from the decoded JWT token and assigned to `user`. Then, a new recipe is created with the title, ingredients, instructions, and user. The new recipe is saved to the database, and if the save operation is successful, the user is redirected to the `/recipes` page. If there's an error during the save operation, the user is redirected back to the `/recipe/new` page.¤Type ¦Status¯FollowUpPrompts’ÙCHow can I handle errors when saving the new recipe to the database?Ù0What other fields can I add to the Recipe model?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿc5æ€e­!ÒªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$b1559df3-3ebb-49a6-bb66-7802a994ee29Ù$4b70c151-f808-4601-962d-d0a93c07bc19‘’“¥Value Ù%Missing user
+Missing required fieldsÀ¨Response…§ContentÚ)If you're still getting a "Missing user" error, it means that `decodedToken.id` is `undefined` when you're trying to create a new recipe. This could be due to a few reasons:
+
+1. **The JWT token does not contain the user's ID**: When you create the JWT token, you should include the user's ID in the payload. Make sure that you're doing this when you create the token.
+
+2. **The JWT token is not being sent in the request**: The `verifyToken` function expects the JWT token to be sent in the cookies of the request. If you're not sending the token, or if you're sending it in a different way (for example, in the headers or the body of the request), `decodedToken.id` will be `undefined`.
+
+3. **The JWT token is not being correctly decoded**: If there's an error during the token verification process, `decodedToken.id` will be `undefined`. Make sure that you're correctly decoding the token and handling any errors that might occur.
+
+To help debug this issue, you could add more logging to your code. For example, you could log the JWT token and the decoded token:
+
+```JavaScript
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    console.log('Token:', token); // Log the token
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        console.log('Decoded token:', decodedToken); // Log the decoded token
+        // rest of your code...
+    });
+});
+```
+
+This will help you see if the token is being sent and decoded correctly. If the token is not being sent or decoded correctly, you'll need to fix this before you can create a new recipe.¤Type ¦Status¯FollowUpPrompts’ÙQHow do I ensure that the user's ID is included in the JWT token when I create it?ÙbCan you show me how to log the request cookies to check if the token is being sent in the request?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ¯Â¥°e­"-ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$005716eb-f1b3-47f1-9eb2-1838b6373b14Ù$18145985-e792-4639-9fa9-c126974143fc‘†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$005716eb-f1b3-47f1-9eb2-1838b6373b14©ReferenceÀ¥ValueÈÑdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚª// Recipe.js
+const mongoose = require('mongoose');
+
+const RecipeSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  ingredients: {
+    type: String,
+    required: true
+  },
+  instructions: {
+    type: String,
+    required: true
+  },
+  user: {
+    type: user.username,
+    ref: 'User',
+    required: true
+  }
+});
+
+module.exports = mongoose.model('Recipe', RecipeSchema);¯OriginalContentÀªSelections‘ƒ¥CaretÀ¥StartÍ£EndÍi¨FilePathÙ4C:\Users\User\Desktop\ABC IT\Js\src\models\Recipe.js¨LanguageªJavaScript‘’“¥Value Ùnuser: {
+    type: user.username,
+    ref: 'User',
+    required: true
+  }how would i refrence the name now À¨Response…§ContentÚSIn your `Recipe` model, you're trying to reference the `username` field from the `User` model. However, the `type` field in a Mongoose schema should be a data type, not a field from another model.
+
+If you want to store the username of the user who created the recipe, you should change the `type` of the `user` field to `String`. Here's how you can modify your `Recipe` model:
+
+```JavaScript
+const RecipeSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  ingredients: {
+    type: String,
+    required: true
+  },
+  instructions: {
+    type: String,
+    required: true
+  },
+  user: {
+    type: String,
+    required: true
+  }
+});
+```
+
+In this modified model, the `user` field is of type `String`. When you create a new recipe, you can assign the user's username to `user`.
+
+Please note that by doing this, you're not creating a reference to the `User` model. Instead, you're just storing the username as a string. If you want to create a reference to the `User` model, you should store the user's ID in the `user` field and set the `type` to `mongoose.Schema.Types.ObjectId`.¤Type ¦Status¯FollowUpPrompts’Ù\How can I modify my code to store the user's ID instead of the username in the `user` field?ÙeCan I still retrieve the username from the `User` model if I store the user's ID in the `user` field?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿfV€e­"lªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$26ca5ff1-88a4-498e-b88c-54b5ee4a1110Ù$4a2228b5-df0b-45ff-bfbf-7e0a17e3a427’†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$26ca5ff1-88a4-498e-b88c-54b5ee4a1110©Reference®#file:'app.js'¥ValueÈ
+ÚdÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ	Ùconst express = require('express');
+const app = express();
+const indexRoutes = require('./src/routes/index');
+const User = require('./src/models/User');
+const mongoose = require('mongoose');
+const { name } = require('ejs');
+const port = 3000;
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+require('./src/db');
+
+app.use(express.json());
+app.use(cookieParser());
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.urlencoded({ extended: false }));
+app.use('/', indexRoutes);
+
+
+app.get('/users/login', (req, res) => {
+    res.render('users/login');
+})
+
+app.post('/users/login', async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.body.username });
+        if (user) {
+            user.comparePassword(req.body.password, (err, isMatch) => {
+                if (err) {
+                    console.log(err);
+                    res.send("An error occurred");
+                } else if (isMatch) {
+                    const token = jwt.sign({ username: user.username }, 'your_jwt_secret');
+                    res.cookie('token', token);
+                    res.redirect('/recipes');
+                } else {
+                    res.send("Invalid username or password");
+                }
+            });
+        } else {
+            res.send("Invalid username or password");
+        }
+    } catch (err) {
+        console.log(err);
+        res.send("An error occurred");
+    }
+});
+
+//app.get('/recipes', (req, res) => {
+//    const token = req.cookies.token;
+//    if (token) {
+//        jwt.verify(token, 'your_jwt_secret', (err, user) => {
+//            if (err) {
+//                return res.sendStatus(403);
+//            }
+//            res.render('recipes/index', { user: user });
+//        });
+//    } else {
+//        res.render('recipes/index');
+//    }
+//});
+app.get('/users/logout', (req, res) => {
+    res.clearCookie('token');
+    res.redirect('/users/login');
+});
+
+app.get('/users/register', (req, res) => {
+    res.render('users/register');
+})
+
+app.post('/users/register', async (req, res) => {
+    const data = {
+        username: req.body.username,
+        password: req.body.password,
+    }
+    await User.create(data);
+
+    res.render('users/login', { username: data.username });
+})
+
+app.listen(port, () => {
+    console.log(`App listening at http://localhost:${port}`);
+});
+¯OriginalContentÀªSelections¨FilePathÙ&C:\Users\User\Desktop\ABC IT\Js\app.js¨LanguageªJavaScript†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$26ca5ff1-88a4-498e-b88c-54b5ee4a1110©ReferenceÀ¥ValueÈ0dÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ
+const express = require('express');
+const router = express.Router();
+const Recipe = require('../models/Recipe');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+// Import controllers
+const mongoose = require('mongoose');
+const recipeController = require('../controllers/recipeController');
+const userController = require('../controllers/userController');
+
+//router.post('/users/register', async (req, res) => {
+//    const { username, password } = req.body;
+//    const user = new User({ username, password });
+//    try {
+//        await user.sav e();
+//        // User registered successfully, redirect to login page
+//        res.redirect('/users/login');
+//    } catch (err) {
+//        // Handle error
+//        console.log(err);
+//        res.redirect('/users/register');
+//    }
+//});
+
+//router.route('/login')
+//    .get((req, res) => res.render('users/login')) // Show login page
+//    .post(userController.login); // Handle login
+
+// Recipe routes
+//router.route('/recipes')
+//    .get((req, res) => {
+//        // Assuming `user` is available in `req.user`
+//        const user = req.user;
+
+//        res.render('recipes/index', { user: user });
+//    });
+router.get('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, user) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
+            res.render('recipes/new', { user: user });
+        });
+    } else {
+        res.redirect('/users/login');
+    }
+});
+
+router.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = decodedToken.id; // No need to convert to ObjectId
+        const { title, ingredients, instructions } = req.body;
+
+        if (!title) console.log('Missing title');
+        if (!ingredients) console.log('Missing ingredients');
+        if (!instructions) console.log('Missing instructions');
+        if (!user) console.log('Missing user');
+        if (title && ingredients && instructions && user) {
+            const newRecipe = new Recipe({ title, ingredients, instructions, user });
+            try {
+                await newRecipe.save();
+                // Recipe created successfully
+                res.redirect('/recipes');
+            } catch (err) {
+                // Handle error
+                console.log(err);
+                res.redirect('/recipe/new');
+            }
+        } else {
+            console.log('Missing required fields');
+            res.redirect('/recipe/new');
+        }
+    });
+});
+
+router.get('/recipes', (req, res) => {
+    const token = req.cookies.token;
+    let user = null;
+    if (token) {
+        jwt.verify(token, 'your_jwt_secret', (err, decodedUser) => {
+            if (err) {
+                console.log(err);
+            } else {
+                user = decodedUser;
+            }
+        });
+    }
+    Recipe.find({})
+        .then(allRecipes => {
+            res.render('recipes/index', { recipes: allRecipes, user: user });
+        })
+        .catch(err => {
+            console.log(err);
+        });
+});
+//router.route('/recipe/:id')
+//    .get((req, res) => res.render('recipes/show')) // Show specific recipe
+//    .put((req, res) => res.render('recipes/edit')) // Show edit recipe form
+//    .delete(recipeController.deleteRecipe);
+
+    
+module.exports = router;¯OriginalContentÀªSelections‘ƒ¥CaretÀ¥StartÍ~£EndÍÏ¨FilePathÙ3C:\Users\User\Desktop\ABC IT\Js\src\routes\index.js¨LanguageªJavaScript‘’“¥Value Úsrouter.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = decodedToken.id; // No need to convert to ObjectId
+        const { title, ingredients, instructions } = req.body;
+
+        if (!title) console.log('Missing title');
+        if (!ingredients) console.log('Missing ingredients');
+        if (!instructions) console.log('Missing instructions');
+        if (!user) console.log('Missing user');
+        if (title && ingredients && instructions && user) {
+            const newRecipe = new Recipe({ title, ingredients, instructions, user });
+            try {
+                await newRecipe.save();
+                // Recipe created successfully
+                res.redirect('/recipes');
+            } catch (err) {
+                // Handle error
+                console.log(err);
+                res.redirect('/recipe/new');
+            }
+        } else {
+            console.log('Missing required fields');
+            res.redirect('/recipe/new');
+        }
+    });
+});
+can you make it in #file:'app.js' À¨Response…§ContentÚİSure, you can move the route from `index.js` to `app.js`. Here's how you can do it:
+
+```JavaScript
+// ... other code ...
+
+app.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = decodedToken.id; // No need to convert to ObjectId
+        const { title, ingredients, instructions } = req.body;
+
+        if (!title) console.log('Missing title');
+        if (!ingredients) console.log('Missing ingredients');
+        if (!instructions) console.log('Missing instructions');
+        if (!user) console.log('Missing user');
+        if (title && ingredients && instructions && user) {
+            const newRecipe = new Recipe({ title, ingredients, instructions, user });
+            try {
+                await newRecipe.save();
+                // Recipe created successfully
+                res.redirect('/recipes');
+            } catch (err) {
+                // Handle error
+                console.log(err);
+                res.redirect('/recipe/new');
+            }
+        } else {
+            console.log('Missing required fields');
+            res.redirect('/recipe/new');
+        }
+    });
+});
+
+// ... other code ...
+```
+
+This code should be placed in your `app.js` file. It defines a POST route for `/recipe/new` that verifies the JWT token, extracts the user's ID from the decoded token, and creates a new recipe with the provided title, ingredients, instructions, and user ID. If the token is not valid or not provided, an error message is sent in the response. If the recipe is created successfully, the user is redirected to the `/recipes` page. If there's an error during the creation of the recipe, the user is redirected back to the `/recipe/new` page.¤Type ¦Status¯FollowUpPrompts’Ù8How can I handle the case when the JWT token is expired?Ù?Can I add more fields to the JWT token payload when signing it?³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ;~‚ğe­"¦ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$98c1b358-15f6-4e12-a86c-286ec2145b33Ù$c2ce7b50-75cb-494c-b78a-759b8705939a‘’“¥Value Ù%Missing user
+Missing required fieldsÀ¨Response…§ContentÚbThe issue is that you're signing the JWT token with the `username` but when verifying the token, you're trying to access the `id` which doesn't exist in the token. 
+
+Here's how you can modify your login route to include the `id` in the JWT token:
+
+```JavaScript
+app.post('/users/login', async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.body.username });
+        if (user) {
+            user.comparePassword(req.body.password, (err, isMatch) => {
+                if (err) {
+                    console.log(err);
+                    res.send("An error occurred");
+                } else if (isMatch) {
+                    const token = jwt.sign({ id: user._id }, 'your_jwt_secret'); // Include the user's ID in the token
+                    res.cookie('token', token);
+                    res.redirect('/recipes');
+                } else {
+                    res.send("Invalid username or password");
+                }
+            });
+        } else {
+            res.send("Invalid username or password");
+        }
+    } catch (err) {
+        console.log(err);
+        res.send("An error occurred");
+    }
+});
+```
+
+In this modified route, the user's ID is included in the JWT token when it's created. This ID can then be accessed when the token is decoded in the `/recipe/new` route. 
+
+This should resolve the "Missing user" error. If you're still getting a "Missing required fields" error, it means that one or more of the `title`, `ingredients`, or `instructions` fields are `undefined` when you're trying to create a new recipe. Make sure that you're sending these fields in the request body.¤Type ¦Status¯FollowUpPrompts³CodeVulnerabilities‘†¢Id «StartOffset ©EndOffset ¤Type³FallbackDisplayTypeµHardcoded CredentialsºFallbackDisplayDescriptionÙ>Embedding credentials in source code risks unauthorized access¶LoggedSkillInvocationsÀ†¨DateTime×ÿF e­# ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$f9217179-7e07-4eea-b413-9c7997227e8dÙ$cc5b2b7b-4e4b-42c1-941d-01ca551fca9d‘’“¥Value Ù%Missing user
+Missing required fieldsÀ¨Response…§ContentÚThe "Missing user" error is still occurring because the `decodedToken.id` is `undefined`. This could be due to the JWT token not containing the user's ID when it's created, or the token not being sent or correctly decoded in the request.
+
+The "Missing required fields" error is occurring because one or more of the `title`, `ingredients`, or `instructions` fields are `undefined` when you're trying to create a new recipe. This could be due to these fields not being sent in the request body, or not being correctly extracted from the request body.
+
+To debug these issues, you can add more logging to your code. For example, you can log the JWT token, the decoded token, and the request body:
+
+```JavaScript
+app.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    console.log('Token:', token); // Log the token
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        console.log('Decoded token:', decodedToken); // Log the decoded token
+        const user = decodedToken.id;
+        const { title, ingredients, instructions } = req.body;
+        console.log('Request body:', req.body); // Log the request body
+
+        // rest of your code...
+    });
+});
+```
+
+This will help you see if the token is being sent and decoded correctly, and if the `title`, `ingredients`, and `instructions` fields are being sent in the request body. If the token is not being sent or decoded correctly, or if the `title`, `ingredients`, and `instructions` fields are not being sent, you'll need to fix these issues before you can create a new recipe.¤Type ¦Status¯FollowUpPrompts³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ¨í‰Ğe­#4ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$97490459-3932-4f4d-870a-f55f6c317813Ù$0c15a10b-dcab-41fb-96ca-f1205381cb31‘’“¥Value Ù%Missing user
+Missing required fieldsÀ¨Response…§ContentÚThe "Missing user" error is still occurring because the `decodedToken.id` is `undefined`. This could be due to the JWT token not containing the user's ID when it's created, or the token not being sent or correctly decoded in the request.
+
+The "Missing required fields" error is occurring because one or more of the `title`, `ingredients`, or `instructions` fields are `undefined` when you're trying to create a new recipe. This could be due to these fields not being sent in the request body, or not being correctly extracted from the request body.
+
+To debug these issues, you can add more logging to your code. For example, you can log the JWT token, the decoded token, and the request body:
+
+```JavaScript
+app.post('/recipe/new', (req, res) => {
+    const token = req.cookies.token;
+    console.log('Token:', token); // Log the token
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        console.log('Decoded token:', decodedToken); // Log the decoded token
+        const user = decodedToken.id;
+        const { title, ingredients, instructions } = req.body;
+        console.log('Request body:', req.body); // Log the request body
+
+        // rest of your code...
+    });
+});
+```
+
+This will help you see if the token is being sent and decoded correctly, and if the `title`, `ingredients`, and `instructions` fields are being sent in the request body. If the token is not being sent or decoded correctly, or if the `title`, `ingredients`, and `instructions` fields are not being sent, you'll need to fix these issues before you can create a new recipe.¤Type ¦Status¯FollowUpPrompts³CodeVulnerabilities¶LoggedSkillInvocationsÀ†¨DateTime×ÿ¡@Àe­#£ªThreadNameÀ°CopilotSessionId‚¤GuidÙ$255e277a-cf5e-407e-b001-55c933376836¨ClientId¢IdÙ4Microsoft.VisualStudio.Conversations.Chat.HelpWindow§Request§Request•Ù$ec72132d-d8c3-4f91-a579-bc9919397549Ù$1ee0b0d4-8779-4f6c-8baa-79531cf5c8b3‘†¯ProviderMoniker‚¤NameÙ6Microsoft.VisualStudio.Copilot.DocumentContextProvider§Version£0.1¦Member¤file©CanReduceÃ©RequestIdÙ$ec72132d-d8c3-4f91-a579-bc9919397549©Reference±#file:'index.ejs'¥ValueÈ¶dÙ‘Microsoft.VisualStudio.Copilot.DocumentContext, Microsoft.VisualStudio.Copilot, Version=0.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a…§ContentÚ®<!DOCTYPE html>
+<html>
+<head>
+    <title>All Recipes</title>
+</head>
+<body>
+    <%- include('../layout', { user: user }) %>
+    <h1>All Recipes</h1>
+    <% if (user) { %>
+        <h2>Welcome, <%= user.username %>!</h2>
+    <% } %>
+    <ul>
+       Hello World
+    </ul>
+    <h1>All Recipes</h1>
+<ul>
+    <% recipes.forEach(recipe => { %>
+        <li><%= recipe.title %></li>
+    <% }); %>
+</ul>
+</body>
+</html>¯OriginalContentÀªSelections¨FilePathÙ7C:\Users\User\Desktop\ABC IT\Js\views\recipes\index.ejs¨LanguageÀ‘’“¥Value Ù:why it now doesnt show the username on #file:'index.ejs' \À¨Response…§ContentÚEThe username is not showing up because the `user` object might not be passed to the `index.ejs` view or the `user` object does not have a `username` property.
+
+When you render the `index.ejs` view, you should pass the `user` object to it. Here's an example of how you can do this:
+
+```JavaScript
+app.get('/recipes', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(403).send({ auth: false, message: 'No token provided.' });
+    }
+    jwt.verify(token, 'your_jwt_secret', async (err, decodedToken) => {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        const user = await User.findById(decodedToken.id);
+        const recipes = await Recipe.find({ user: user._id });
+        res.render('recipes/index', { user, recipes });
+    });
+});
+```
+
+In this code, the `user` object is retrieved from the database using the user's ID from the decoded JWT token. The `recipes` are retrieved from the database using the user's ID. Then, the `index.ejs` view is rendered with the `user` and `recipes` objects.
+
+Please note that this code assumes that you have a `User` model and a `Recipe` model, and that the `User` model has a `username` property. If your models are different, you'll need to adjust the code accordingly.¤Type ¦Status¯FollowUpPrompts’ÙGHow can I display other properties of the user in the `index.ejs` view?Ù`Can I modify the `index.ejs` view to display a different message when there's no user logged in?³CodeVulnerabilities¶LoggedSkillInvocationsÀ

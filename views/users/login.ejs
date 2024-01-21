@@ -4,43 +4,14 @@
     <title>Login</title>
 </head>
 <body>
-    <%- include('../layout') %>
+     <%- include('../layout', { user: null }) %>
     <h1>Login</h1>
-    <form id="login-form">
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button type="submit">Log in</button>
-      </form>
-      
-      <script>
-      document.getElementById('login-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        fetch('/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username, password }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // User is logged in, show a success message
-                alert('Login successful! Redirecting to dashboard...');
-                // Then redirect to the dashboard
-                 
-            } 
-            else {
-                // Show an error message
-                alert('Login failed. Please check your username and password.');
-            }
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-        });
-      });
-      </script>
+    <form action="/users/login" method="POST">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
 </body>
 </html>

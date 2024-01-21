@@ -4,14 +4,14 @@
     <title>Register</title>
 </head>
 <body>
-    <%- include('../layout') %>
+    <%- include('../layout', { user: null }) %>
     <h1>Register</h1>
-    <form action="/register" method="POST">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <button type="submit">Register</button>
-    </form>
+    <form action="/users/register" method="POST">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <button type="submit">Register</button>
+</form>
 </body>
 </html>

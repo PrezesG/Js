@@ -4,14 +4,19 @@
     <title>All Recipes</title>
 </head>
 <body>
-    <%- include('../layout') %>
+    <%- include('../layout', { user: user }) %>
     <h1>All Recipes</h1>
+    <% if (user) { %>
+        <h2>Welcome, <%= user.username %>!</h2>
+    <% } %>
     <ul>
-        <% if (user) { %>
-            Hello, <%= user.username %>!
-        <% } else { %>
-            Hello!
-        <% } %>
+       Hello World
     </ul>
+    <h1>All Recipes</h1>
+<ul>
+    <% recipes.forEach(recipe => { %>
+        <li><%= recipe.title %></li>
+    <% }); %>
+</ul>
 </body>
 </html>
